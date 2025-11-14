@@ -1,97 +1,106 @@
 # 🔥 HotNews Agent
 
-> 基于 AI 评分的每日热点新闻推送系统
+> A daily news digest system that uses AI to score and filter news, then sends you the best stories via email.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-## 📖 项目简介
+## 📖 What it does
 
-HotNews Agent 是一个智能新闻推送系统，它能够：
+I built this because I was tired of sifting through dozens of news articles every morning. HotNews Agent:
 
-- ✅ **AI 评分**：使用 LLM 对新闻进行质量评分（基于 NewsScore 的评分标准）
-- ✅ **RSS 抓取**：从多个新闻源自动抓取最新新闻
-- ✅ **智能过滤**：仅推送高分新闻（可配置阈值）
-- ✅ **中文改写**：自动将英文标题改写为客观、简洁的中文标题
-- ✅ **中文摘要**：生成事实导向的简洁摘要（支持全文抓取）
-- ✅ **邮件推送**：精美的每日简报邮件（支持多收件人）
-- ✅ **自动去重**：基于 URL 和标题相似度的智能去重
-- ✅ **定时执行**：GitHub Actions 自动定时运行
+- ✅ **AI Scoring**: Uses LLM to score news quality (based on NewsScore's criteria)
+- ✅ **RSS Fetching**: Automatically fetches news from multiple RSS feeds
+- ✅ **Smart Filtering**: Only sends high-scoring articles (configurable threshold)
+- ✅ **Title Rewriting**: Converts English titles to Chinese (you can modify this)
+- ✅ **Summary Generation**: Creates concise, fact-oriented summaries (supports full-text extraction)
+- ✅ **Email Delivery**: Beautiful daily digest emails (supports multiple recipients)
+- ✅ **Auto Deduplication**: Smart deduplication based on URL and title similarity
+- ✅ **Scheduled Execution**: GitHub Actions runs automatically
 
-## 🏗 系统架构
+The scoring logic follows [NewsScore](https://github.com/themaximalist/newsscore)'s standards - it prioritizes tech, business, and economics while filtering out gossip and clickbait.
+
+## 🏗 How it works
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                      HotNews Agent                            │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │ RSS抓取   │→│ AI评分    │→│ 阈值过滤   │→│ 去重过滤   │   │
+│  │ RSS Fetch│→│ AI Score  │→│ Filter   │→│ Dedupe    │   │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
 │                                                               │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │ 全文抓取   │→│ 中文改写   │→│ 中文摘要   │→│ 邮件推送   │   │
+│  │Full Text │→│ Rewrite   │→│ Summary  │→│ Email     │   │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## ✨ 核心特性
+The system uses a two-layer approach: it scores all articles using snippets first, then only fetches full text for the top-scoring ones. This keeps costs down while still generating quality summaries.
 
-### 1. AI 新闻评分
-- 基于 NewsScore 的严格评分标准
-- 重点关注科技、商业、经济新闻
-- 过滤低质量内容（八卦、过度政治化等）
+## ✨ Key Features
 
-### 2. 智能去重
-- **URL 去重**：归一化 URL，去除跟踪参数
-- **标题相似度去重**：使用文本相似度算法，去除不同来源的同一条新闻
-- **历史记录**：SQLite 数据库记录已发送新闻，避免重复推送
+### 1. AI News Scoring
+- Based on NewsScore's strict scoring standards
+- Focuses on tech, business, and economics
+- Filters out low-quality content (gossip, excessive politics, etc.)
 
-### 3. 分层处理
-- **第一层**：使用 snippet 对所有新闻进行评分
-- **第二层**：仅对高分新闻抓取全文，生成高质量摘要
-- **成本优化**：避免不必要的全文抓取和 API 调用
+### 2. Smart Deduplication
+- **URL Deduplication**: Normalizes URLs, removes tracking parameters
+- **Title Similarity**: Uses text similarity algorithm to remove duplicate articles from different sources
+- **History Tracking**: SQLite database records sent articles to avoid duplicates
 
-### 4. 灵活的摘要生成
-- 支持基于 snippet 或全文生成摘要
-- 可配置目标长度和最大长度
-- 智能截断（在标点处截断，保持句子完整性）
+### 3. Two-Layer Processing
+- **Layer 1**: Scores all articles using snippets
+- **Layer 2**: Only fetches full text for high-scoring articles to generate quality summaries
+- **Cost Optimization**: Avoids unnecessary full-text fetching and API calls
 
-## 🚀 快速开始
+### 4. Flexible Summary Generation
+- Supports snippet-based or full-text summaries
+- Configurable target and max length
+- Smart truncation (cuts at punctuation, maintains sentence integrity)
 
-### 1. 克隆项目
+## 🚀 Quick Start
+
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/hotnews-agent.git
+git clone https://github.com/guleguleguru/hotnews-agent.git
 cd hotnews-agent
 ```
 
-### 2. 安装依赖
+### 2. Install dependencies
 
 ```bash
-# 创建虚拟环境（推荐）
+# Create virtual environment (recommended)
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. 配置环境变量
+### 3. Configure environment variables
 
-复制 `env.example` 为 `.env` 并填写配置：
+Copy `env.example` to `.env` and fill in your settings:
 
 ```bash
 cp env.example .env
 ```
 
-编辑 `.env` 文件：
+You'll need:
+- An LLM API key (DeepSeek is cheap, OpenAI works too)
+- SMTP credentials (Gmail/Outlook) or SendGrid API key
+- Recipient email address(es)
+
+Example `.env`:
 
 ```bash
-# LLM API 配置（推荐使用 DeepSeek，便宜）
+# LLM API (DeepSeek is recommended - much cheaper)
 OPENAI_API_KEY=your-api-key-here
 OPENAI_MODEL=deepseek-chat
 OPENAI_BASE_URL=https://api.deepseek.com
 
-# 邮件配置（SMTP）
+# Email (SMTP)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
@@ -99,72 +108,80 @@ SMTP_PASS=your-app-password
 MAIL_FROM=your-email@gmail.com
 MAIL_TO=recipient@example.com
 
-# 过滤配置
-SCORE_THRESHOLD=0.4  # 推荐值：0.3-0.5
-TOPK=8
+# Filtering
+SCORE_THRESHOLD=0.4  # Lower = more articles. I use 0.4
+TOPK=8  # Number of articles to send daily
 ```
 
-### 4. 运行测试
+### 4. Run tests
 
 ```bash
 cd extensions/hotnews-agent
 
-# 使用模拟数据测试（不调用 API）
+# Test with mock data (no API calls)
 python run_daily.py --mock
 
-# 完整运行（真实新闻 + AI 评分）
+# Run with real news
 python run_daily.py --real
 ```
 
-## 📧 邮件示例
+## 📧 Email Example
+
+Here's what the daily digest looks like:
 
 ```
 ┌─────────────────────────────────────┐
-│     📰 今日热点速递                  │
+│     📰 Daily HotNews Digest         │
 │        2025-11-14                   │
 └─────────────────────────────────────┘
 
-1) [分数 0.82] 首例AI策划网络间谍活动被阻断
-   摘要：网络安全机构成功阻断首例AI策划的网络间谍活动，
-         该攻击采用高度复杂技术，系统性评估显示网络攻击
-         能力在六个月内翻倍。
-   来源：Hacker News | 时间：2025-11-13 18:34 | 阅读原文 →
+1) [Score 0.82] First AI-Planned Cyber Espionage Activity Blocked
+   Summary: Cybersecurity agencies successfully blocked the first 
+            AI-planned cyber espionage activity. The attack used 
+            highly complex technology, and systemic evaluations show 
+            cyber attack capabilities doubled within six months.
+   Source: Hacker News | Time: 2025-11-13 18:34 | Read more →
 
-2) [分数 0.82] Waymo无人驾驶出租车将登陆美国三市高速
-   摘要：Waymo无人驾驶出租车将于周三在美国洛杉矶、凤凰城
-         和旧金山三市高速公路投入运营，首次实现无驾驶员
-         情况下在高速公路提供付费载客服务。
-   来源：Ars Technica | 时间：2025-11-13 15:30 | 阅读原文 →
+2) [Score 0.82] Waymo Self-Driving Taxis to Launch on Highways
+   Summary: Waymo self-driving taxis will begin operations on highways 
+            in Los Angeles, Phoenix, and San Francisco on Wednesday, 
+            providing paid passenger services for the first time 
+            without a driver.
+   Source: Ars Technica | Time: 2025-11-13 15:30 | Read more →
 
 ...
 ```
 
-## ⚙️ 配置说明
+## ⚙️ Configuration
 
-### 核心配置项
+### Core Settings
 
-| 配置项 | 说明 | 默认值 | 推荐值 |
-|--------|------|--------|--------|
-| `SCORE_THRESHOLD` | 新闻分数阈值 | 0.8 | 0.4 |
-| `TOPK` | 每天推送的新闻数量 | 8 | 8 |
-| `MAX_ITEMS` | 每天最多处理的新闻数 | 12 | 12 |
-| `TITLE_SIMILARITY_THRESHOLD` | 标题相似度阈值 | 0.75 | 0.75 |
-| `ENABLE_DEDUP` | 启用去重 | true | true |
+| Setting | Description | Default | Recommended |
+|---------|-------------|---------|-------------|
+| `SCORE_THRESHOLD` | Minimum score to include | 0.8 | 0.4 (gets more articles) |
+| `TOPK` | Articles per digest | 8 | 8 |
+| `MAX_ITEMS` | Max articles to process | 12 | 12 |
+| `TITLE_SIMILARITY_THRESHOLD` | Dedup similarity | 0.75 | 0.75 |
+| `ENABLE_DEDUP` | Enable deduplication | true | true |
 
-### 邮件配置
+### Email Setup
 
-**方式 1: SMTP（推荐 Gmail/Outlook）**
+**Option 1: SMTP (Gmail/Outlook)**
+
+Gmail requires an app password (not your regular password). Get it from Google Account settings → Security → App passwords.
 
 ```bash
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password  # Gmail 需要使用应用专用密码
+SMTP_PASS=your-app-password
 MAIL_FROM=your-email@gmail.com
 MAIL_TO=recipient1@example.com,recipient2@example.com
 ```
 
-**方式 2: SendGrid（推荐用于生产环境）**
+**Option 2: SendGrid (Recommended for production)**
+
+Better for production. Free tier gives you 100 emails/day, which is plenty.
 
 ```bash
 SENDGRID_API_KEY=SG.xxx
@@ -172,9 +189,11 @@ MAIL_FROM=noreply@yourdomain.com
 MAIL_TO=recipient@example.com
 ```
 
-### LLM 配置
+### LLM Providers
 
-**使用 DeepSeek（推荐，便宜）**
+**DeepSeek** (recommended - very cheap):
+- ~$0.14/month for daily digests
+- Good quality for this use case
 
 ```bash
 OPENAI_API_KEY=sk-xxx
@@ -182,7 +201,9 @@ OPENAI_MODEL=deepseek-chat
 OPENAI_BASE_URL=https://api.deepseek.com
 ```
 
-**使用 OpenAI（更贵但质量更高）**
+**OpenAI**:
+- More expensive but higher quality
+- GPT-4 Turbo works great if you want the best results
 
 ```bash
 OPENAI_API_KEY=sk-xxx
@@ -190,59 +211,61 @@ OPENAI_MODEL=gpt-4-turbo-preview
 OPENAI_BASE_URL=https://api.openai.com/v1
 ```
 
-## 🤖 GitHub Actions 定时执行
+## 🤖 GitHub Actions Setup
 
-### 1. 配置 Secrets
+The repo includes a GitHub Actions workflow that runs daily. To set it up:
 
-在 GitHub 仓库设置中添加以下 Secrets：
+### 1. Configure Secrets
+
+Add secrets in your repo settings:
 
 ```
 Settings → Secrets and variables → Actions → New repository secret
 ```
 
-必需的 Secrets：
+Required secrets:
 - `OPENAI_API_KEY`
 - `SMTP_USER`
 - `SMTP_PASS`
 - `MAIL_TO`
-- （其他配置项根据需要添加）
+- (Other config items as needed)
 
-### 2. 修改执行时间
+### 2. Adjust Schedule
 
-编辑 `.github/workflows/daily.yml`：
+Edit `.github/workflows/daily.yml`:
 
 ```yaml
 on:
   schedule:
-    - cron: '0 12 * * *'  # 每天 12:00 UTC（北京时间 20:00）
+    - cron: '0 12 * * *'  # Daily at 12:00 UTC (20:00 Beijing time)
 ```
 
-### 3. 手动触发
+### 3. Manual Trigger
 
-在 GitHub Actions 页面可以手动运行 workflow。
+You can also trigger the workflow manually from the GitHub Actions page.
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 hotnews-agent/
 ├── extensions/
-│   └── hotnews-agent/           # 核心代码
+│   └── hotnews-agent/           # Core code
 │       ├── __init__.py
-│       ├── config.py            # 配置管理
-│       ├── rss_fetcher.py       # RSS 新闻抓取
-│       ├── news_scorer.py       # AI 新闻评分
-│       ├── newscore_adapter.py  # 数据模型和适配器
-│       ├── zh_rewrite.py        # 中文标题改写
-│       ├── zh_summary.py        # 中文摘要生成
-│       ├── full_text_extractor.py # 全文抓取
-│       ├── email_push.py        # 邮件推送
-│       ├── storage.py           # 历史记录/去重
-│       └── run_daily.py         # 主执行入口
+│       ├── config.py            # Configuration management
+│       ├── rss_fetcher.py       # RSS news fetching
+│       ├── news_scorer.py       # AI news scoring
+│       ├── newscore_adapter.py  # Data models and adapters
+│       ├── zh_rewrite.py        # Title rewriting
+│       ├── zh_summary.py        # Summary generation
+│       ├── full_text_extractor.py # Full-text extraction
+│       ├── email_push.py        # Email delivery
+│       ├── storage.py           # History/deduplication
+│       └── run_daily.py         # Main entry point
 ├── .github/
 │   └── workflows/
-│       └── daily.yml            # GitHub Actions 配置
-├── scripts/                     # 工具脚本
-├── tests/                       # 单元测试
+│       └── daily.yml            # GitHub Actions config
+├── scripts/                     # Utility scripts
+├── tests/                       # Unit tests
 ├── requirements.txt
 ├── .gitignore
 ├── LICENSE
@@ -250,11 +273,11 @@ hotnews-agent/
 └── README.md
 ```
 
-## 🔧 开发指南
+## 🔧 Development Guide
 
-### 添加新的新闻源
+### Add News Sources
 
-编辑 `extensions/hotnews-agent/rss_fetcher.py`：
+Edit `extensions/hotnews-agent/rss_fetcher.py`:
 
 ```python
 DEFAULT_SOURCES = [
@@ -263,69 +286,72 @@ DEFAULT_SOURCES = [
 ]
 ```
 
-### 自定义邮件模板
+### Customize Email Template
 
-编辑 `extensions/hotnews-agent/email_push.py` 中的 `_build_html_body()` 方法。
+Edit `extensions/hotnews-agent/email_push.py` - the `_build_html_body()` method.
 
-### 调整提示词
+### Adjust Prompts
 
-- 标题改写：`zh_rewrite.py` → `_build_rewrite_prompt()`
-- 摘要生成：`zh_summary.py` → `_build_summary_prompt()`
-- 新闻评分：`news_scorer.py` → `SCORE_PROMPT_TEMPLATE`
+- Title rewriting: `zh_rewrite.py` → `_build_rewrite_prompt()`
+- Summary generation: `zh_summary.py` → `_build_summary_prompt()`
+- News scoring: `news_scorer.py` → `SCORE_PROMPT_TEMPLATE`
 
-## 🧪 测试
+## 🧪 Testing
 
 ```bash
-# 单元测试
+# Unit tests
 pytest tests/
 
-# 模拟数据测试
+# Mock data test (no API calls)
 cd extensions/hotnews-agent
 python run_daily.py --mock
 
-# 完整流程测试
+# Full test with real news
 python run_daily.py --real
 ```
 
-## 💰 成本估算
+## 💰 Cost Estimate
 
-使用 DeepSeek API，每天推送 8 条新闻给 10 个邮箱：
+Using DeepSeek API, sending 8 articles daily to 10 recipients:
 
-- **API 调用成本**：约 0.14 元/月
-- **邮件发送成本**：0 元（SMTP 免费）
-- **GitHub Actions**：0 元（公共仓库免费）
+- **API calls**: ~$0.14/month
+- **Email**: Free (SMTP) or free tier (SendGrid)
+- **GitHub Actions**: Free for public repos
 
-**总计：约 0.14 元/月** ✅
+**Total: ~$0.14/month** - pretty cheap for a daily news digest.
 
-详细成本分析请参考项目文档。
+## 📝 License & Attribution
 
-## 📝 许可与归属
+This project uses **MIT License**.
 
-本项目使用 **MIT License**。
+### Important Notice
 
-### 重要声明
+The news scoring logic is based on [NewsScore](https://github.com/themaximalist/newsscore) (by [@themaximalist](https://github.com/themaximalist)). This project implements a Python version that doesn't depend on the original Node.js implementation, but strictly follows the same scoring standards.
 
-本项目的新闻评分逻辑基于 [NewsScore](https://github.com/themaximalist/newsscore) (by [@themaximalist](https://github.com/themaximalist)) 的评分标准和提示词。我们严格遵循其评分标准，但实现了独立的 Python 版本，不依赖原项目的 Node.js 实现。
+We only added on top:
+- Score threshold filtering
+- Title rewriting and summary generation (currently in Chinese)
+- Email delivery
+- Scheduled execution
 
-NewsScore 项目同样使用 MIT License。
+NewsScore also uses MIT License.
 
-## 🤝 贡献
+## 🤝 Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Pull requests welcome! Just make sure to:
+- Follow PEP 8
+- Add tests for new features
+- Update docs if needed
 
-在贡献代码前，请确保：
-1. 遵循 PEP 8 代码规范
-2. 添加必要的注释和文档字符串
-3. 编写单元测试
-4. 更新相关文档
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-详细贡献指南请参考 [CONTRIBUTING.md](CONTRIBUTING.md)。
+## ❓ FAQ
 
-## ❓ 常见问题
+### Q: Can I use other LLM providers?
 
-### Q: 如何使用国内 LLM 服务？
+A: Yes, any OpenAI-compatible API works. Just change `OPENAI_BASE_URL` and `OPENAI_MODEL`.
 
-A: 修改配置：
+Examples:
 
 ```bash
 # DeepSeek
@@ -339,32 +365,37 @@ OPENAI_MODEL=moonshot-v1-8k
 OPENAI_BASE_URL=https://api.moonshot.cn/v1
 ```
 
-### Q: 如何调整新闻数量？
+### Q: How do I adjust the number of articles?
 
-A: 修改 `TOPK` 配置项。
+A: Modify the `TOPK` setting in your `.env` file.
 
-### Q: 如何禁用去重？
+### Q: How do I disable deduplication?
 
-A: 设置 `ENABLE_DEDUP=false`。
+A: Set `ENABLE_DEDUP=false` in your `.env`.
 
-### Q: Gmail SMTP 报错？
+### Q: Gmail SMTP not working?
 
-A: 需要在 Google 账户设置中开启"两步验证"并生成"应用专用密码"。
+A: You need an app password, not your regular password. Enable 2FA first, then generate an app password from Google Account settings → Security → App passwords.
 
-### Q: 如何添加更多收件人？
+### Q: How do I add more recipients?
 
-A: 在 `MAIL_TO` 中用逗号分隔多个邮箱：
+A: Comma-separate emails in `MAIL_TO`:
 
 ```bash
 MAIL_TO=email1@example.com,email2@example.com,email3@example.com
 ```
 
-## 📮 联系方式
+### Q: How do I change the digest frequency?
 
-- 提交 Issue：[GitHub Issues](https://github.com/your-username/hotnews-agent/issues)
-- 邮箱：your-email@example.com
+A: Edit the cron schedule in `.github/workflows/daily.yml`.
+
+## 📮 Contact
+
+- Email: jackysong.2002@gmail.com
+- Issues: [GitHub Issues](https://github.com/guleguleguru/hotnews-agent/issues)
 
 ---
 
 **Built with ❤️ based on [NewsScore](https://github.com/themaximalist/newsscore)**
 
+If you find this useful, consider giving it a star ⭐

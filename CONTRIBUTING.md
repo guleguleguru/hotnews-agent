@@ -1,142 +1,137 @@
-# 贡献指南
+# Contributing Guide
 
-感谢你对 HotNews Agent 项目的关注！
+Thanks for your interest in HotNews Agent!
 
-## 🎯 贡献原则
+## 🎯 Contribution Principles
 
-在贡献代码前，请务必遵循以下原则：
+Before contributing, please follow these principles:
 
-1. **不修改 NewsScore 的评分逻辑**
-   - 本项目的核心约束是复用 NewsScore 的评分算法
-   - 只在其外层添加功能，不修改其内部实现
+1. **Don't modify NewsScore's scoring logic**
+   - The core constraint is to reuse NewsScore's scoring algorithm
+   - Only add features on top, don't modify the internal implementation
 
-2. **最小侵入性设计**
-   - 通过标准接口/输出对接 NewsScore
-   - 保持模块解耦，易于维护
+2. **Minimal invasive design**
+   - Interface with NewsScore through standard interfaces/outputs
+   - Keep modules decoupled and maintainable
 
-3. **保持代码质量**
-   - 遵循 PEP 8 代码规范
-   - 添加必要的注释和文档字符串
-   - 编写单元测试
+3. **Maintain code quality**
+   - Follow PEP 8 code style
+   - Add necessary comments and docstrings
+   - Write unit tests
 
-## 📝 提交流程
+## 📝 Submission Process
 
-### 1. Fork 项目
+### 1. Fork the project
 
-点击右上角的 "Fork" 按钮，将项目复制到你的账户下。
+Click the "Fork" button in the top right to copy the project to your account.
 
-### 2. 克隆到本地
+### 2. Clone to local
 
 ```bash
 git clone https://github.com/your-username/hotnews-agent.git
 cd hotnews-agent
 ```
 
-### 3. 创建分支
+### 3. Create a branch
 
 ```bash
 git checkout -b feature/your-feature-name
-# 或
+# or
 git checkout -b fix/your-bug-fix
 ```
 
-### 4. 进行修改
+### 4. Make changes
 
-- 修改代码
-- 添加测试
-- 更新文档
+- Modify code
+- Add tests
+- Update documentation
 
-### 5. 提交更改
+### 5. Commit changes
 
 ```bash
 git add .
-git commit -m "feat: 添加某某功能"
+git commit -m "feat: add some feature"
 ```
 
-提交信息格式：
-- `feat: 新功能`
-- `fix: 修复 bug`
-- `docs: 文档更新`
-- `style: 代码格式调整`
-- `refactor: 代码重构`
-- `test: 测试相关`
-- `chore: 构建/工具相关`
+Commit message format:
+- `feat: new feature`
+- `fix: bug fix`
+- `docs: documentation update`
+- `style: code formatting`
+- `refactor: code refactoring`
+- `test: test related`
+- `chore: build/tool related`
 
-### 6. 推送到 GitHub
+### 6. Push to GitHub
 
 ```bash
 git push origin feature/your-feature-name
 ```
 
-### 7. 创建 Pull Request
+### 7. Create Pull Request
 
-在 GitHub 上创建 Pull Request，描述你的更改。
+Create a Pull Request on GitHub describing your changes.
 
-## 🧪 测试
+## 🧪 Testing
 
-在提交 PR 前，请确保：
+Before submitting a PR, make sure:
 
 ```bash
-# 代码格式检查
+# Code formatting check
 black extensions/hotnews-agent/
 flake8 extensions/hotnews-agent/
 
-# 运行测试
+# Run tests
 pytest tests/
 
-# 测试完整流程
+# Test full workflow
 cd extensions/hotnews-agent
 python run_daily.py --mock
 ```
 
-## 📚 文档
+## 📚 Documentation
 
-如果你的更改涉及用户可见的功能，请更新：
+If your changes involve user-visible features, please update:
 
-- `README.md` - 主文档
-- `extensions/hotnews-agent/README.md` - 模块说明
-- 代码中的文档字符串
+- `README.md` - Main documentation
+- `extensions/hotnews-agent/README.md` - Module documentation
+- Docstrings in code
 
-## 🤔 建议的贡献方向
+## 🤔 Suggested Contribution Areas
 
-### 容易上手的任务
+### Easy tasks
 
-- 修复文档错误
-- 改进错误提示信息
-- 添加使用示例
-- 改进邮件模板样式
+- Fix documentation errors
+- Improve error messages
+- Add usage examples
+- Improve email template styling
 
-### 中等难度任务
+### Medium difficulty
 
-- 添加新的推送渠道（Telegram、Slack 等）
-- 改进去重算法（使用 embedding 相似度）
-- 添加主题过滤功能
-- 优化提示词
+- Add new delivery channels (Telegram, Slack, etc.)
+- Improve deduplication algorithm (use embedding similarity)
+- Add topic filtering
+- Optimize prompts
 
-### 高难度任务
+### Advanced tasks
 
-- 添加 Web 界面（配置/查看历史）
-- 支持多语言输出
-- 添加事件聚类功能
-- 性能优化
+- Add web interface (configuration/view history)
+- Support multi-language output
+- Add event clustering
+- Performance optimization
 
-## ❓ 问题讨论
+## ❓ Questions and Discussion
 
-如果你有任何疑问或建议，欢迎：
+If you have any questions or suggestions, feel free to:
 
-1. 提交 Issue 讨论
-2. 在现有 Issue 下评论
-3. 加入讨论频道（如果有）
+1. Open an Issue for discussion
+2. Comment on existing Issues
+3. Join discussion channels (if available)
 
-## 📄 许可
+## 📄 License
 
-通过提交 PR，你同意将你的贡献以 MIT License 发布。
+By submitting a PR, you agree to release your contribution under the MIT License.
 
 ---
 
-再次感谢你的贡献！🎉
-
-
-
-
-
+Thanks again for your contribution! 🎉
