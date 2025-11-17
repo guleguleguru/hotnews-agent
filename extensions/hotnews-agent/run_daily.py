@@ -166,9 +166,12 @@ def deduplicate_news(items: list[NewsScoredItem], storage: HistoryStorage) -> li
         logger.info("去重功能已禁用")
         return items
     
-    # 第一步：去除已发送的新闻（基于URL）
-    deduped_by_url = [item for item in items if not storage.is_sent(item.url)]
-    logger.info(f"URL去重: {len(items)} -> {len(deduped_by_url)}")
+    # 第一步：去除已发送的新闻（基于URL，只检查最近N天内的记录）
+    deduped_by_url = [
+        item for item in items 
+        if not storage.is_sent(item.url, days=config.DEDUP_WINDOW_DAYS)
+    ]
+    logger.info(f"URL去重（最近{config.DEDUP_WINDOW_DAYS}天）: {len(items)} -> {len(deduped_by_url)}")
     
     # 第二步：去除标题相似的重复新闻（不同来源的同一条新闻）
     deduped_by_title = deduplicate_by_title_similarity(

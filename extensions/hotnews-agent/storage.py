@@ -121,23 +121,29 @@ class HistoryStorage:
         normalized_url = HistoryStorage.normalize_url(url)
         return hashlib.md5(normalized_url.encode("utf-8")).hexdigest()
     
-    def is_sent(self, url: str) -> bool:
+    def is_sent(self, url: str, days: int = 7) -> bool:
         """
-        检查 URL 是否已发送
+        检查 URL 是否在最近 N 天内已发送
         
         Args:
             url: 新闻 URL
+            days: 检查最近N天内的记录（默认7天）
         
         Returns:
-            bool: 是否已发送
+            bool: 是否在最近N天内已发送
         """
         url_hash = self.hash_url(url)
+        cutoff_date = datetime.now() - timedelta(days=days)
         
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.execute(
-                    "SELECT 1 FROM sent_news WHERE url_hash = ? LIMIT 1",
-                    (url_hash,)
+                    """
+                    SELECT 1 FROM sent_news 
+                    WHERE url_hash = ? AND sent_at >= ?
+                    LIMIT 1
+                    """,
+                    (url_hash, cutoff_date.isoformat())
                 )
                 return cursor.fetchone() is not None
                 

@@ -55,12 +55,16 @@ jobs:
           # 去重配置
           ENABLE_DEDUP: true
           HISTORY_DB_PATH: ./history/sent_news.db
+          DEDUP_WINDOW_DAYS: 7
           
           # 时区
           TIMEZONE: America/New_York
         run: |
           cd extensions/hotnews-agent
-          python run_daily.py --real
+          # 创建必要的目录
+          mkdir -p logs history
+          # 运行主程序（带错误处理）
+          python run_daily.py --real || exit 1
       
       - name: Upload logs
         if: always()

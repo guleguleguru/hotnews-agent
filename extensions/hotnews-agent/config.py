@@ -57,6 +57,8 @@ class Config:
     HISTORY_DB_PATH: str = os.getenv("HISTORY_DB_PATH", "./history/sent_news.db")
     # 标题相似度阈值（0.0-1.0）：用于去除不同来源的同一条新闻，默认0.75（75%相似）
     TITLE_SIMILARITY_THRESHOLD: float = float(os.getenv("TITLE_SIMILARITY_THRESHOLD", "0.75"))
+    # 去重时间窗口（天）：只检查最近N天内的记录，默认7天（同一条新闻7天后可以再次发送）
+    DEDUP_WINDOW_DAYS: int = int(os.getenv("DEDUP_WINDOW_DAYS", "7"))
     
     # 费用与速率控制
     MAX_ITEMS: int = int(os.getenv("MAX_ITEMS", "12"))
@@ -137,6 +139,7 @@ class Config:
 - Summary Target Length: {cls.SUMMARY_TARGET_LENGTH} (建议)
 - Summary Max Length: {cls.SUMMARY_MAX_LENGTH} (硬上限)
 - Enable Dedup: {cls.ENABLE_DEDUP}
+- Dedup Window Days: {cls.DEDUP_WINDOW_DAYS} (去重时间窗口)
 - Timezone: {cls.TIMEZONE}
 """
         return summary.strip()
