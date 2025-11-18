@@ -1,11 +1,11 @@
 name: Daily HotNews Digest
 
 on:
-  # 定时执行：每天 12:00 UTC（北京时间 20:00）
-  schedule:
-    - cron: '0 12 * * *'
+  # 仅允许手动触发（此仓库为展示用途，不自动运行）
+  # 如需自动运行，请取消下面的注释并配置 GitHub Secrets
+  # schedule:
+  #   - cron: '0 12 * * *'
   
-  # 允许手动触发
   workflow_dispatch:
 
 jobs:
