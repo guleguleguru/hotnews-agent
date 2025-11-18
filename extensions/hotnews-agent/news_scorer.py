@@ -17,9 +17,9 @@ class NewsScorer:
     完全基于 NewsScore 的评分标准和提示词
     """
     
-    # NewsScore 的评分提示词（完全参考原项目）
+    # NewsScore 的评分提示词（完全参考原项目，但使用 0-100 分制）
     SCORE_PROMPT_TEMPLATE = """
-You are News Rank AI, an advanced artificial intelligence system designed to evaluate and score news articles based on their quality and importance. Assign a score ranging from 0.0 (low quality) to 10.0 (high quality) to each article.
+You are News Rank AI, an advanced artificial intelligence system designed to evaluate and score news articles based on their quality and importance. Assign a score ranging from 0 (low quality) to 100 (high quality) to each article.
 
 INSTRUCTIONS:
 - Assess the quality of the news article by examining its content.
@@ -27,21 +27,21 @@ INSTRUCTIONS:
 - Focus on surfacing news related to economics, technology, and business.
 - We're generally not interested in celebrity gossip, excessive war, politics, sports, environment or other low-quality content unless it's one of the biggest stories of the year.
 - Be strict in your evaluation, assigning lower scores unless an article is truly exceptional.
-- Only give a score above 7 if the article is still impactful and relevant after one year.
-- Less than 5% of articles should receive a score higher than 7.
+- Only give a score above 70 if the article is still impactful and relevant after one year.
+- Less than 5% of articles should receive a score higher than 70.
 - Determine the credibility of the article by considering the author, publication, and URL. Favor sources with a history of limited clickbait content.
 - Lower the score for articles that lack sufficient content.
 - Evaluate articles from the perspective of an early adopter, tech-savvy audience similar to Hacker News and Techmeme readers.
-- Provide only a numerical score between 0.0 and 10.0, without returning a JSON object or any other text.
+- Provide only a numerical score between 0 and 100, without returning a JSON object or any other text.
 
 EXAMPLES:
-"I was shot nine times in the Christchurch massacre – now I'm reclaiming the gunman's journey" -> 3.5
-"How 2 Students Rescued Dozens of People from the Fighting in Sudan" -> 5.9
-"The best Wi-Fi routers in 2022" -> 0.1
-"Tequila is About to Become the U.S.'s Most Popular Spirit. That's Bad for the Environment" -> 2.0
-"What is profit and loss (PnL) and how to calculate it" -> 2.0
-"OpenAI announces ChatGPT successor GPT-4" -> 9.9
-"He wrote a book on a rare subject. Then a ChatGPT replica appeared on Amazon." -> 6.3
+"I was shot nine times in the Christchurch massacre – now I'm reclaiming the gunman's journey" -> 35
+"How 2 Students Rescued Dozens of People from the Fighting in Sudan" -> 59
+"The best Wi-Fi routers in 2022" -> 1
+"Tequila is About to Become the U.S.'s Most Popular Spirit. That's Bad for the Environment" -> 20
+"What is profit and loss (PnL) and how to calculate it" -> 20
+"OpenAI announces ChatGPT successor GPT-4" -> 99
+"He wrote a book on a rare subject. Then a ChatGPT replica appeared on Amazon." -> 63
 
 ARTICLE DETAILS:
 {article_json}
@@ -66,7 +66,7 @@ The calculated score for the article above is:
             article: 新闻数据字典，包含 title, url, source, snippet 等
         
         Returns:
-            float: 评分 (0.0-1.0)，基于 NewsScore 的 0-10 分制转换
+            float: 评分 (0.0-100.0)，基于 NewsScore 的 0-100 分制
         """
         try:
             # 构建提示词
@@ -88,8 +88,8 @@ The calculated score for the article above is:
             return score
             
         except Exception as e:
-            logger.error(f"评分失败: {e}，返回默认分数 0.5")
-            return 0.5
+            logger.error(f"评分失败: {e}，返回默认分数 50.0")
+            return 50.0
     
     def score_batch(self, articles: List[Dict[str, Any]], batch_size: int = 5) -> List[Dict[str, Any]]:
         """
@@ -116,7 +116,7 @@ The calculated score for the article above is:
                 
             except Exception as e:
                 logger.error(f"评分单篇新闻失败 (索引 {i}): {e}")
-                article["score"] = 0.5  # 默认中等分数
+                article["score"] = 50.0  # 默认中等分数
         
         logger.info("批量评分完成")
         return articles
@@ -130,7 +130,7 @@ The calculated score for the article above is:
             max_retries: 最大重试次数
         
         Returns:
-            float: 评分 (0.0-1.0)
+            float: 评分 (0.0-100.0)
         """
         for attempt in range(max_retries + 1):
             try:
@@ -158,14 +158,14 @@ The calculated score for the article above is:
                 
                 # 解析评分
                 score = self._parse_score(raw_score)
-                logger.debug(f"解析后分数: {score:.4f} (原始 10分制: {score*10:.2f})")
+                logger.debug(f"解析后分数: {score:.2f} (0-100分制)")
                 
                 # 验证范围
-                if 0.0 <= score <= 1.0:
+                if 0.0 <= score <= 100.0:
                     return score
                 else:
                     logger.warning(f"评分超出范围: {score}，尝试修正")
-                    return max(0.0, min(1.0, score))
+                    return max(0.0, min(100.0, score))
                 
             except Exception as e:
                 if attempt < max_retries:
@@ -174,7 +174,7 @@ The calculated score for the article above is:
                     logger.error(f"LLM 调用失败，已达最大重试次数: {e}")
                     raise
         
-        return 0.5  # 兜底分数
+        return 50.0  # 兜底分数
     
     def _parse_score(self, raw_text: str) -> float:
         """
@@ -196,26 +196,25 @@ The calculated score for the article above is:
             
             if numbers:
                 # 取第一个数字
-                score_10 = float(numbers[0])
+                score = float(numbers[0])
                 
-                # NewsScore 使用 0-10 分制，我们转换为 0-1
-                # 例如: 8.5 -> 0.85
-                if score_10 > 10:
-                    # 可能是 0-100 或 0-1000，归一化
-                    if score_10 > 100:
-                        score_10 = score_10 / 1000
-                    else:
-                        score_10 = score_10 / 100
-                else:
-                    score_10 = score_10 / 10
+                # NewsScore 使用 0-100 分制，直接返回
+                # 如果 LLM 返回了 0-10 分制的分数，自动转换为 0-100
+                if score <= 10.0:
+                    # 可能是 0-10 分制，转换为 0-100
+                    score = score * 10
                 
-                return score_10
+                return score
             
             # 方法 2: 尝试解析 JSON
             try:
                 data = json.loads(raw_text)
                 if isinstance(data, dict) and "score" in data:
-                    return float(data["score"]) / 10
+                    score = float(data["score"])
+                    # 如果返回的是 0-10 分制，转换为 0-100
+                    if score <= 10.0:
+                        score = score * 10
+                    return score
             except:
                 pass
             

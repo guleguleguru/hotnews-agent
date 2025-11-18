@@ -103,8 +103,8 @@ def validate_news_item(data: Dict[str, Any]) -> bool:
         logger.warning(f"score 类型错误: {type(score)}, 期望 int/float")
         return False
     
-    if score < 0 or score > 1:
-        logger.warning(f"score 超出范围 [0, 1]: {score}")
+    if score < 0 or score > 100:
+        logger.warning(f"score 超出范围 [0, 100]: {score}")
         return False
     
     # published_at 格式检查（如果存在）
@@ -346,7 +346,7 @@ def generate_mock_scored_news() -> List[NewsScoredItem]:
             "source": "Reuters",
             "published_at": "2025-11-11T07:52:00",
             "snippet": "World leaders agree on ambitious carbon reduction targets...",
-            "score": 0.92
+            "score": 92
         },
         {
             "title": "Tech Giant Announces Revolutionary AI Chip",
@@ -354,7 +354,7 @@ def generate_mock_scored_news() -> List[NewsScoredItem]:
             "source": "Bloomberg",
             "published_at": "2025-11-11T06:30:00",
             "snippet": "New chip promises 10x performance improvement...",
-            "score": 0.89
+            "score": 89
         },
         {
             "title": "Breaking: Global Markets Rally on Economic Data",
@@ -362,7 +362,7 @@ def generate_mock_scored_news() -> List[NewsScoredItem]:
             "source": "Financial Times",
             "published_at": "2025-11-11T05:15:00",
             "snippet": "Stocks surge as inflation data beats expectations...",
-            "score": 0.85
+            "score": 85
         },
     ]
     
