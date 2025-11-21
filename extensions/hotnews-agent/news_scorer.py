@@ -26,6 +26,7 @@ INSTRUCTIONS:
 - High-quality articles are engaging, significant, and relevant, with long-term importance.
 - Focus on surfacing news related to economics, technology, and business.
 - We're generally not interested in celebrity gossip, excessive war, politics, sports, environment or other low-quality content unless it's one of the biggest stories of the year.
+- **EXCLUDE job postings, hiring announcements, recruitment ads, or "we're hiring" content. These should receive scores below 30, as they are advertisements, not news, and lack long-term relevance.**
 - Be strict in your evaluation, assigning lower scores unless an article is truly exceptional.
 - Only give a score above 70 if the article is still impactful and relevant after one year.
 - Less than 5% of articles should receive a score higher than 70.
@@ -42,6 +43,8 @@ EXAMPLES:
 "What is profit and loss (PnL) and how to calculate it" -> 20
 "OpenAI announces ChatGPT successor GPT-4" -> 99
 "He wrote a book on a rare subject. Then a ChatGPT replica appeared on Amazon." -> 63
+"Roundtable is hiring two Sales Development Representatives" -> 15
+"YC-backed startup looking for engineers" -> 12
 
 ARTICLE DETAILS:
 {article_json}
@@ -82,6 +85,13 @@ The calculated score for the article above is:
             
             # 调用 LLM（含超时和重试）
             score = self._call_llm_with_retry(prompt)
+            
+            # 后处理：检测并降低招聘信息的分数
+            if self._is_job_posting(article):
+                original_score = score
+                score = min(score, 30.0)  # 招聘信息最高不超过30分
+                if score < original_score:
+                    logger.debug(f"检测到招聘信息，降低分数: {original_score:.2f} -> {score:.2f}")
             
             logger.debug(f"评分完成: {article.get('title', '')[:50]}... -> {score:.2f}")
             
@@ -224,5 +234,34 @@ The calculated score for the article above is:
         except Exception as e:
             logger.warning(f"评分解析失败: {e}，原文: {raw_text}")
             raise
+    
+    def _is_job_posting(self, article: Dict[str, Any]) -> bool:
+        """
+        检测文章是否为招聘信息
+        
+        Args:
+            article: 新闻数据字典
+        
+        Returns:
+            bool: 如果是招聘信息返回 True
+        """
+        # 招聘相关的关键词（中英文）
+        job_keywords = [
+            "hiring", "we're hiring", "we are hiring", "job opening", "job posting",
+            "recruiting", "recruitment", "career", "apply to role", "join our team",
+            "招聘", "诚聘", "招人", "职位", "岗位", "应聘", "求职", "加入我们"
+        ]
+        
+        # 检查标题和摘要
+        title = article.get("title", "").lower()
+        snippet = article.get("snippet", "").lower()
+        combined_text = f"{title} {snippet}"
+        
+        # 如果包含招聘关键词，很可能是招聘信息
+        for keyword in job_keywords:
+            if keyword.lower() in combined_text:
+                return True
+        
+        return False
 
 
