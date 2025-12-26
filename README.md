@@ -18,7 +18,7 @@ I built this because I was tired of sifting through dozens of news articles ever
 - ✅ **Auto Deduplication**: Smart deduplication based on URL and title similarity
 - ✅ **Scheduled Execution**: GitHub Actions runs automatically
 
-The scoring logic follows [NewsScore](https://github.com/themaximalist/newsscore)'s standards - it prioritizes tech, business, and economics while filtering out gossip and clickbait.
+
 
 ## 🏗 How it works
 
