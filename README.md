@@ -9,16 +9,46 @@
 
 I built this because I was tired of sifting through dozens of news articles every morning. HotNews Agent:
 
-- ✅ **AI Scoring**: Uses LLM to score news quality (based on NewsScore's criteria)
 - ✅ **RSS Fetching**: Automatically fetches news from multiple RSS feeds
-- ✅ **Smart Filtering**: Only sends high-scoring articles (configurable threshold)
+- ✅ **AI Scoring**: Uses LLM to score news quality with optimized tier-based scoring (0-100 scale)
+- ✅ **Smart Filtering**: Only sends high-scoring articles (with dynamic threshold adjustment)
 - ✅ **Title Rewriting**: Converts English titles to Chinese (you can modify this)
 - ✅ **Summary Generation**: Creates concise, fact-oriented summaries (supports full-text extraction)
 - ✅ **Email Delivery**: Beautiful daily digest emails (supports multiple recipients)
 - ✅ **Auto Deduplication**: Smart deduplication based on URL and title similarity
 - ✅ **Scheduled Execution**: GitHub Actions runs automatically
 
-The scoring logic follows [NewsScore](https://github.com/themaximalist/newsscore)'s standards - it prioritizes tech, business, and economics while filtering out gossip and clickbait.
+## ✨ Key Features
+
+### 1. Optimized AI Scoring System
+
+Uses **Tier-based Scoring + Cynical Persona + Clickbait Detection**:
+
+- **Tier-based Scoring**: S/A/B/C classification reduces AI hallucinations
+  - S Tier (90-100): Industry-shaking events
+  - A Tier (70-89): Major updates with high value
+  - B Tier (40-69): Regular news
+  - C Tier (0-39): Noise/trash
+- **Cynical Persona**: Defaults to low scores, only truly important news gets high scores
+- **Clickbait Penalty**: Detects sensational titles with empty content, automatically deducts points
+
+### 2. Dynamic Threshold Adjustment
+
+- Automatically lowers threshold if filtered articles are fewer than target
+- Minimum threshold protection (≥30) ensures quality
+- Smart fallback mechanism ensures you always receive enough emails daily
+
+### 3. Smart Deduplication
+
+- **URL Deduplication**: Normalizes URLs, removes tracking parameters
+- **Title Similarity**: Uses text similarity algorithm to remove duplicate articles from different sources
+- **History Tracking**: SQLite database records sent articles to avoid duplicates
+
+### 4. Two-Layer Processing (Cost Optimization)
+
+- **Layer 1**: Scores all articles using snippets
+- **Layer 2**: Only fetches full text for high-scoring articles to generate quality summaries
+- **Cost Control**: Avoids unnecessary full-text fetching and API calls
 
 ## 🏗 How it works
 
@@ -27,37 +57,15 @@ The scoring logic follows [NewsScore](https://github.com/themaximalist/newsscore
 │                      HotNews Agent                            │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
 │  │ RSS Fetch│→│ AI Score  │→│ Filter   │→│ Dedupe    │   │
+│  │          │  │(Tier-based│  │(Dynamic) │  │(Smart)   │   │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
 │                                                               │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
 │  │Full Text │→│ Rewrite   │→│ Summary  │→│ Email     │   │
+│  │(Top N)   │  │(Chinese) │  │(Chinese) │  │(Digest)  │   │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
 └──────────────────────────────────────────────────────────────┘
 ```
-
-The system uses a two-layer approach: it scores all articles using snippets first, then only fetches full text for the top-scoring ones. This keeps costs down while still generating quality summaries.
-
-## ✨ Key Features
-
-### 1. AI News Scoring
-- Based on NewsScore's strict scoring standards
-- Focuses on tech, business, and economics
-- Filters out low-quality content (gossip, excessive politics, etc.)
-
-### 2. Smart Deduplication
-- **URL Deduplication**: Normalizes URLs, removes tracking parameters
-- **Title Similarity**: Uses text similarity algorithm to remove duplicate articles from different sources
-- **History Tracking**: SQLite database records sent articles to avoid duplicates
-
-### 3. Two-Layer Processing
-- **Layer 1**: Scores all articles using snippets
-- **Layer 2**: Only fetches full text for high-scoring articles to generate quality summaries
-- **Cost Optimization**: Avoids unnecessary full-text fetching and API calls
-
-### 4. Flexible Summary Generation
-- Supports snippet-based or full-text summaries
-- Configurable target and max length
-- Smart truncation (cuts at punctuation, maintains sentence integrity)
 
 ## 🚀 Quick Start
 
@@ -108,9 +116,10 @@ SMTP_PASS=your-app-password
 MAIL_FROM=your-email@gmail.com
 MAIL_TO=recipient@example.com
 
-# Filtering
-SCORE_THRESHOLD=0.4  # Lower = more articles. I use 0.4
+# Filtering (recommended for new scoring system)
+SCORE_THRESHOLD=35  # 0-100 scale, 35=standard, 30=more articles, 40=strict
 TOPK=8  # Number of articles to send daily
+MAX_ITEMS=12  # Max articles to process (cost control)
 ```
 
 ### 4. Run tests
@@ -135,19 +144,18 @@ Here's what the daily digest looks like:
 │        2025-11-14                   │
 └─────────────────────────────────────┘
 
-1) [Score 0.82] First AI-Planned Cyber Espionage Activity Blocked
-   Summary: Cybersecurity agencies successfully blocked the first 
-            AI-planned cyber espionage activity. The attack used 
-            highly complex technology, and systemic evaluations show 
-            cyber attack capabilities doubled within six months.
-   Source: Hacker News | Time: 2025-11-13 18:34 | Read more →
+1) [Score 85.2] OpenAI Releases GPT-5 with 10x Performance Boost
+   Summary: OpenAI officially released GPT-5, showing 10x 
+            performance improvement in multiple benchmarks, 
+            with support for longer context and stronger 
+            reasoning capabilities.
+   Source: TechCrunch | Time: 2025-11-14 08:30 | Read more →
 
-2) [Score 0.82] Waymo Self-Driving Taxis to Launch on Highways
-   Summary: Waymo self-driving taxis will begin operations on highways 
-            in Los Angeles, Phoenix, and San Francisco on Wednesday, 
-            providing paid passenger services for the first time 
-            without a driver.
-   Source: Ars Technica | Time: 2025-11-13 15:30 | Read more →
+2) [Score 78.5] Fed Announces 0.5% Rate Cut
+   Summary: The Federal Reserve announced a 0.5% cut in 
+            benchmark interest rates, the first rate cut 
+            since 2020, with positive market reactions.
+   Source: Bloomberg | Time: 2025-11-14 07:15 | Read more →
 
 ...
 ```
@@ -158,11 +166,12 @@ Here's what the daily digest looks like:
 
 | Setting | Description | Default | Recommended |
 |---------|-------------|---------|-------------|
-| `SCORE_THRESHOLD` | Minimum score to include | 0.8 | 0.4 (gets more articles) |
+| `SCORE_THRESHOLD` | Minimum score to include (0-100) | 35 | 30-40 (for new scoring system) |
 | `TOPK` | Articles per digest | 8 | 8 |
 | `MAX_ITEMS` | Max articles to process | 12 | 12 |
 | `TITLE_SIMILARITY_THRESHOLD` | Dedup similarity | 0.75 | 0.75 |
 | `ENABLE_DEDUP` | Enable deduplication | true | true |
+| `DEDUP_WINDOW_DAYS` | Dedup time window (days) | 7 | 7 |
 
 ### Email Setup
 
@@ -225,8 +234,8 @@ Settings → Secrets and variables → Actions → New repository secret
 
 Required secrets:
 - `OPENAI_API_KEY`
-- `SMTP_USER`
-- `SMTP_PASS`
+- `SMTP_USER` or `SENDGRID_API_KEY`
+- `SMTP_PASS` (if using SMTP)
 - `MAIL_TO`
 - (Other config items as needed)
 
@@ -253,7 +262,7 @@ hotnews-agent/
 │       ├── __init__.py
 │       ├── config.py            # Configuration management
 │       ├── rss_fetcher.py       # RSS news fetching
-│       ├── news_scorer.py       # AI news scoring
+│       ├── news_scorer.py       # AI news scoring (Tier-based + Persona + Clickbait)
 │       ├── newscore_adapter.py  # Data models and adapters
 │       ├── zh_rewrite.py        # Title rewriting
 │       ├── zh_summary.py        # Summary generation
@@ -329,7 +338,9 @@ This project uses **MIT License**.
 The news scoring logic is based on [NewsScore](https://github.com/themaximalist/newsscore) (by [@themaximalist](https://github.com/themaximalist)). This project implements a Python version that doesn't depend on the original Node.js implementation, but strictly follows the same scoring standards.
 
 We only added on top:
-- Score threshold filtering
+- RSS fetching (independent of NewsScore)
+- Optimized scoring system (Tier-based + Persona + Clickbait detection)
+- Dynamic threshold adjustment
 - Title rewriting and summary generation (currently in Chinese)
 - Email delivery
 - Scheduled execution
@@ -367,7 +378,7 @@ OPENAI_BASE_URL=https://api.moonshot.cn/v1
 
 ### Q: How do I adjust the number of articles?
 
-A: Modify the `TOPK` setting in your `.env` file.
+A: Modify the `TOPK` setting in your `.env` file. The system will automatically adjust the threshold to ensure enough articles.
 
 ### Q: How do I disable deduplication?
 
@@ -384,6 +395,10 @@ A: Comma-separate emails in `MAIL_TO`:
 ```bash
 MAIL_TO=email1@example.com,email2@example.com,email3@example.com
 ```
+
+### Q: Not getting enough articles with new scoring system?
+
+A: The system automatically lowers the threshold (minimum 30) to ensure you always receive emails. You can also manually set `SCORE_THRESHOLD=30`.
 
 ### Q: How do I change the digest frequency?
 
