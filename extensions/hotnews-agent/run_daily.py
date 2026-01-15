@@ -15,6 +15,8 @@ from zh_summary import ChineseSummaryGenerator
 from email_push import EmailPusher
 from storage import HistoryStorage
 from full_text_extractor import FullTextExtractor
+from run_artifact import RunArtifact
+from news_scorer import NewsScorer
 
 
 # 配置日志
@@ -74,15 +76,16 @@ def normalize_title(title: str) -> str:
     return normalized
 
 
-def title_similarity(title1: str, title2: str) -> float:
+def title_similarity(title1: str, title2: str, use_tfidf: bool = True) -> float:
     """
     计算两个标题的相似度（0.0-1.0）
     
-    使用 SequenceMatcher 计算相似度，并考虑关键词重叠
+    优先使用 TF-IDF cosine 相似度，回退到 SequenceMatcher
     
     Args:
         title1: 标题1
         title2: 标题2
+        use_tfidf: 是否使用 TF-IDF（需要 sklearn）
     
     Returns:
         float: 相似度分数（0.0-1.0）
@@ -97,7 +100,28 @@ def title_similarity(title1: str, title2: str) -> float:
     if not norm1 or not norm2:
         return 0.0
     
-    # 使用 SequenceMatcher 计算相似度
+    # 尝试使用 TF-IDF cosine 相似度
+    if use_tfidf:
+        try:
+            from sklearn.feature_extraction.text import TfidfVectorizer
+            from sklearn.metrics.pairwise import cosine_similarity
+            
+            vectorizer = TfidfVectorizer()
+            tfidf_matrix = vectorizer.fit_transform([norm1, norm2])
+            similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+            
+            # 额外检查：如果标题长度差异过大，降低相似度
+            len_ratio = min(len(norm1), len(norm2)) / max(len(norm1), len(norm2))
+            if len_ratio < 0.5:  # 长度差异超过50%
+                similarity *= 0.7
+            
+            return float(similarity)
+        except ImportError:
+            logger.debug("sklearn 未安装，回退到 SequenceMatcher")
+        except Exception as e:
+            logger.debug(f"TF-IDF 计算失败: {e}，回退到 SequenceMatcher")
+    
+    # 回退到 SequenceMatcher
     similarity = SequenceMatcher(None, norm1, norm2).ratio()
     
     # 额外检查：如果标题长度差异过大，降低相似度
@@ -186,6 +210,54 @@ def deduplicate_news(items: list[NewsScoredItem], storage: HistoryStorage) -> li
     return deduped_by_title
 
 
+def _log_score_distribution(items: List[NewsScoredItem], stage: str = ""):
+    """
+    输出分数分布统计
+    
+    Args:
+        items: 新闻列表
+        stage: 阶段名称（用于日志）
+    """
+    if not items:
+        logger.info(f"{stage}分布统计: 无数据")
+        return
+    
+    import statistics
+    
+    scores = [item.score for item in items]
+    mean_score = statistics.mean(scores)
+    std_score = statistics.stdev(scores) if len(scores) > 1 else 0.0
+    
+    sorted_scores = sorted(scores)
+    p10 = sorted_scores[int(len(sorted_scores) * 0.1)] if len(sorted_scores) > 0 else 0
+    p50 = sorted_scores[int(len(sorted_scores) * 0.5)] if len(sorted_scores) > 0 else 0
+    p90 = sorted_scores[int(len(sorted_scores) * 0.9)] if len(sorted_scores) > 0 else 0
+    
+    # Tier 统计
+    tier_counts = {'S': 0, 'A': 0, 'B': 0, 'C': 0}
+    for item in items:
+        structured = getattr(item, "structured_data", {})
+        tier = structured.get("tier", "C").upper() if structured else "C"
+        tier_counts[tier] = tier_counts.get(tier, 0) + 1
+    
+    # Top 5 / Bottom 5
+    sorted_items = sorted(items, key=lambda x: x.score, reverse=True)
+    top5 = [(item.title[:50], item.score) for item in sorted_items[:5]]
+    bottom5 = [(item.title[:50], item.score) for item in sorted_items[-5:]]
+    
+    logger.info(f"\n{stage}分布统计:")
+    logger.info(f"  Mean: {mean_score:.2f}, Std: {std_score:.2f}")
+    logger.info(f"  P10: {p10:.2f}, P50: {p50:.2f}, P90: {p90:.2f}")
+    logger.info(f"  Tier分布: S={tier_counts.get('S', 0)}, A={tier_counts.get('A', 0)}, "
+               f"B={tier_counts.get('B', 0)}, C={tier_counts.get('C', 0)}")
+    logger.info(f"  Top 5:")
+    for title, score in top5:
+        logger.info(f"    - {title}... ({score:.2f})")
+    logger.info(f"  Bottom 5:")
+    for title, score in bottom5:
+        logger.info(f"    - {title}... ({score:.2f})")
+
+
 def sort_and_limit(items: list[NewsScoredItem], topk: int, max_items: int = None) -> list[NewsScoredItem]:
     """
     按分数排序并限制数量（二级排序：score desc → published_time desc）
@@ -237,13 +309,38 @@ def main(use_mock_data: bool = False):
     # 2. 获取评分结果（RSS + AI 评分）
     logger.info("\n步骤 2/8: 获取新闻并进行 AI 评分")
     
+    # 保存原始新闻（用于 artifact）
+    raw_articles = []
+    
     if use_mock_data:
         logger.info("使用模拟数据模式")
         scored_items = generate_mock_scored_news()
+        raw_articles = [item.to_dict() for item in scored_items]
     else:
         logger.info("使用真实新闻模式（RSS + AI 评分）")
         # 获取最近 48 小时的新闻，最多 50 条
-        scored_items = fetch_and_score_real_news(hours=48, max_stories=50)
+        from rss_fetcher import RSSFetcher
+        fetcher = RSSFetcher()
+        articles = fetcher.fetch_all(hours=48, max_per_source=15)
+        raw_articles = articles.copy()
+        
+        # AI 评分（使用结构化评分）
+        scorer = NewsScorer()
+        scoring_limit = 75  # 评分更多新闻，确保有足够候选
+        articles_to_score = articles[:scoring_limit]
+        scored_articles = scorer.score_batch(articles_to_score)
+        
+        # 批处理校准
+        scored_articles = scorer.calibrate_batch(scored_articles)
+        
+        # 转换为 NewsScoredItem
+        scored_items = []
+        for article in scored_articles:
+            item = NewsScoredItem(article)
+            # 保存结构化数据
+            if "structured_data" in article:
+                item.structured_data = article["structured_data"]
+            scored_items.append(item)
     
     if not scored_items:
         logger.warning("没有获取到任何新闻，退出")
@@ -251,12 +348,56 @@ def main(use_mock_data: bool = False):
     
     logger.info(f"获取到 {len(scored_items)} 条评分新闻")
     
-    # 3. 按分数过滤
+    # 输出分布统计
+    _log_score_distribution(scored_items, "评分后")
+    
+    # 3. 按分数过滤（含动态阈值调整）
     logger.info("\n步骤 3/8: 按分数阈值过滤")
-    filtered_items = filter_by_score(scored_items, config.SCORE_THRESHOLD)
+    
+    # 初始阈值
+    current_threshold = config.SCORE_THRESHOLD
+    filtered_items = filter_by_score(scored_items, current_threshold)
+    
+    # 记录阈值调整历史
+    threshold_history = [
+        {"threshold": current_threshold, "count": len(filtered_items), "step": "initial"}
+    ]
+    
+    # 动态阈值调整：如果过滤后新闻少于 TOPK，逐步降低阈值
+    # 但最低不低于 30（避免质量过低的新闻）
+    min_threshold = max(30.0, config.SCORE_THRESHOLD - 10.0)  # 最低阈值：30 或 原阈值-10，取较大值
+    
+    if len(filtered_items) < config.TOPK and current_threshold > min_threshold:
+        logger.warning(f"过滤后只有 {len(filtered_items)} 条新闻（需要 {config.TOPK} 条），尝试降低阈值...")
+        
+        # 逐步降低阈值（每次降 5 分），直到有足够新闻或达到最低阈值
+        for adjusted_threshold in [current_threshold - 5, current_threshold - 10, min_threshold]:
+            if adjusted_threshold < min_threshold:
+                break
+            
+            adjusted_items = filter_by_score(scored_items, adjusted_threshold)
+            threshold_history.append({
+                "threshold": adjusted_threshold,
+                "count": len(adjusted_items),
+                "step": "adjusted"
+            })
+            
+            if len(adjusted_items) >= config.TOPK:
+                filtered_items = adjusted_items
+                current_threshold = adjusted_threshold
+                logger.info(f"✅ 阈值已调整为 {adjusted_threshold}，获得 {len(filtered_items)} 条新闻")
+                break
+            elif len(adjusted_items) > len(filtered_items):
+                # 即使不够 TOPK，也比之前多，就采用
+                filtered_items = adjusted_items
+                current_threshold = adjusted_threshold
+                logger.info(f"⚠️ 阈值已调整为 {adjusted_threshold}，获得 {len(filtered_items)} 条新闻（仍少于 {config.TOPK} 条）")
     
     # 保存 Top 3（用于空结果回退）
     fallback_items = sorted(scored_items, key=lambda x: x.score, reverse=True)[:3]
+    
+    # 输出分布统计
+    _log_score_distribution(filtered_items, "过滤后")
     
     # 4. 去重（可选）
     logger.info("\n步骤 4/8: 去重过滤")
@@ -266,7 +407,24 @@ def main(use_mock_data: bool = False):
         deduped_items = deduplicate_news(filtered_items, storage)
     else:
         deduped_items = []
-        logger.warning(f"没有新闻满足阈值 >= {config.SCORE_THRESHOLD}")
+        logger.warning(f"没有新闻满足阈值 >= {current_threshold}")
+    
+    # 4.5 智能回退：如果去重后新闻少于 TOPK，尝试使用更多候选
+    if len(deduped_items) < config.TOPK and len(filtered_items) > len(deduped_items):
+        # 如果去重导致新闻减少，尝试从所有评分新闻中选择（即使低于阈值）
+        logger.warning(f"去重后只有 {len(deduped_items)} 条新闻（需要 {config.TOPK} 条），尝试补充候选...")
+        
+        # 从所有评分新闻中选择 Top N（N = TOPK * 2），然后去重
+        all_candidates = sorted(scored_items, key=lambda x: x.score, reverse=True)[:config.TOPK * 2]
+        additional_deduped = deduplicate_news(all_candidates, storage)
+        
+        # 合并去重后的结果（优先使用高分的）
+        combined_items = deduped_items + [item for item in additional_deduped if item not in deduped_items]
+        combined_items = sorted(combined_items, key=lambda x: x.score, reverse=True)[:config.TOPK * 2]
+        
+        if len(combined_items) > len(deduped_items):
+            deduped_items = combined_items
+            logger.info(f"✅ 补充候选后获得 {len(deduped_items)} 条新闻")
     
     # 5. 排序并限制数量（含费用控制）
     logger.info("\n步骤 5/8: 排序并限制数量")
@@ -274,6 +432,10 @@ def main(use_mock_data: bool = False):
     if deduped_items:
         # 费用控制：最多处理 MAX_ITEMS 条
         final_items = sort_and_limit(deduped_items, config.TOPK, config.MAX_ITEMS)
+        
+        # 如果最终新闻少于 TOPK，记录警告但继续处理
+        if len(final_items) < config.TOPK:
+            logger.warning(f"⚠️ 最终只有 {len(final_items)} 条新闻（目标 {config.TOPK} 条），将发送 {len(final_items)} 条")
     else:
         final_items = []
         logger.warning("所有新闻均已发送过或无符合条件的新闻")
@@ -352,12 +514,40 @@ def main(use_mock_data: bool = False):
         storage.prune()
         
         # 打印统计信息
-        stats = storage.get_stats()
+        storage_stats = storage.get_stats()
+        
+        # 计算运行统计
+        run_stats = {
+            "total_fetched": len(raw_articles),
+            "total_scored": len(scored_items),
+            "filtered_count": len(filtered_items),
+            "deduped_count": len(deduped_items),
+            "final_sent": len(final_items),
+            "threshold_used": current_threshold,
+            "history_count": storage_stats.get('total_count', 0)
+        }
+        
         logger.info(f"\n运行摘要:")
-        logger.info(f"- 总抓取数: {len(scored_items)}")
-        logger.info(f"- 过阈值数: {len(filtered_items)}")
-        logger.info(f"- 成功发送数: {len(final_items)}")
-        logger.info(f"- 历史记录数: {stats.get('total_count', 0)}")
+        logger.info(f"- 总抓取数: {run_stats['total_fetched']}")
+        logger.info(f"- 总评分数: {run_stats['total_scored']}")
+        logger.info(f"- 过阈值数: {run_stats['filtered_count']}")
+        logger.info(f"- 去重后数: {run_stats['deduped_count']}")
+        logger.info(f"- 成功发送数: {run_stats['final_sent']}")
+        logger.info(f"- 使用阈值: {run_stats['threshold_used']}")
+        logger.info(f"- 历史记录数: {run_stats['history_count']}")
+        
+        # 保存运行 Artifact
+        artifact = RunArtifact()
+        artifact.save_run(
+            date=date_str,
+            raw_articles=raw_articles,
+            scored_items=scored_items,
+            filtered_items=filtered_items,
+            deduped_items=deduped_items,
+            final_items=final_items,
+            threshold_history=threshold_history,
+            stats=run_stats
+        )
         
     else:
         logger.error("❌ 邮件推送失败")

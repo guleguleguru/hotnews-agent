@@ -11,6 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 from loguru import logger
 from config import config
+from full_text_cache import FullTextCache
 
 
 class FullTextExtractor:
@@ -22,18 +23,24 @@ class FullTextExtractor:
     # 请求超时（秒）
     REQUEST_TIMEOUT = 15
     
-    def __init__(self):
-        """初始化提取器"""
+    def __init__(self, use_cache: bool = True):
+        """
+        初始化提取器
+        
+        Args:
+            use_cache: 是否使用缓存
+        """
         self.session = requests.Session()
         self.session.headers.update({
             "User-Agent": self.USER_AGENT,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9",
         })
+        self.cache = FullTextCache() if use_cache else None
     
     def extract(self, url: str, max_paragraphs: int = 3) -> Optional[str]:
         """
-        从 URL 提取正文前几段
+        从 URL 提取正文前几段（使用缓存）
         
         Args:
             url: 新闻 URL
@@ -42,6 +49,12 @@ class FullTextExtractor:
         Returns:
             Optional[str]: 提取的正文文本（失败返回 None）
         """
+        # 先检查缓存
+        if self.cache:
+            cached_content = self.cache.get(url)
+            if cached_content:
+                return cached_content
+        
         try:
             logger.info(f"开始抓取全文: {url}")
             
@@ -73,6 +86,11 @@ class FullTextExtractor:
             if paragraphs:
                 result = "\n\n".join(paragraphs)
                 logger.info(f"成功提取 {len(paragraphs)} 段正文（共 {len(result)} 字符）")
+                
+                # 保存到缓存
+                if self.cache:
+                    self.cache.set(url, result)
+                
                 return result
             else:
                 logger.warning(f"提取的正文为空: {url}")

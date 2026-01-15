@@ -287,7 +287,9 @@ class NewsScoreAdapter:
 # 真实新闻获取和评分（基于 RSS + AI）
 def fetch_and_score_real_news(hours: int = 24, max_stories: int = 50) -> List[NewsScoredItem]:
     """
-    获取真实新闻并进行 AI 评分
+    获取真实新闻并进行 AI 评分（已废弃，请使用 run_daily.py 中的新流程）
+    
+    注意：此函数保留用于向后兼容，但新代码应直接在 run_daily.py 中处理
     
     Args:
         hours: 获取最近 N 小时的新闻
@@ -304,7 +306,7 @@ def fetch_and_score_real_news(hours: int = 24, max_stories: int = 50) -> List[Ne
     try:
         # 1. 抓取新闻
         fetcher = RSSFetcher()
-        articles = fetcher.fetch_all(hours=hours, max_per_source=10)
+        articles = fetcher.fetch_all(hours=hours, max_per_source=15)
         
         if not articles:
             logger.warning("未抓取到任何新闻")
@@ -312,12 +314,21 @@ def fetch_and_score_real_news(hours: int = 24, max_stories: int = 50) -> List[Ne
         
         logger.info(f"抓取到 {len(articles)} 条新闻")
         
-        # 2. AI 评分
+        # 2. AI 评分（使用结构化评分）
         scorer = NewsScorer()
-        scored_articles = scorer.score_batch(articles[:max_stories])
+        scoring_limit = int(max_stories * 1.5)
+        scored_articles = scorer.score_batch(articles[:scoring_limit])
         
-        # 3. 转换为 NewsScoredItem
-        scored_items = [NewsScoredItem(article) for article in scored_articles]
+        # 3. 批处理校准
+        scored_articles = scorer.calibrate_batch(scored_articles)
+        
+        # 4. 转换为 NewsScoredItem
+        scored_items = []
+        for article in scored_articles:
+            item = NewsScoredItem(article)
+            if "structured_data" in article:
+                item.structured_data = article["structured_data"]
+            scored_items.append(item)
         
         logger.info(f"评分完成，共 {len(scored_items)} 条新闻")
         

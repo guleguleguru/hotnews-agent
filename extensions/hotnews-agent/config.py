@@ -50,8 +50,10 @@ class Config:
     
     # 过滤和推送配置
     # 评分阈值（0-100分制）：只发送分数 >= 此值的新闻
-    # 建议值：40=更多新闻，50=推荐，60=严格，80=极严格
-    SCORE_THRESHOLD: float = float(os.getenv("SCORE_THRESHOLD", "40"))
+    # 建议值：30=更多新闻（新评分标准下推荐），40=标准，50=严格，60=极严格
+    # 注意：新评分标准（分桶+愤世嫉俗Persona）更严格，建议使用 30-35
+    # 系统会自动动态调整阈值（最低不低于30），确保有足够新闻
+    SCORE_THRESHOLD: float = float(os.getenv("SCORE_THRESHOLD", "35"))
     TOPK: int = int(os.getenv("TOPK", "8"))
     
     # 去重和历史记录
