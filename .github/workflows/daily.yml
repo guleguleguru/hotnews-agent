@@ -1,11 +1,11 @@
 name: Daily HotNews Digest
 
 on:
-  # 仅允许手动触发（此仓库为展示用途，不自动运行）
-  # 如需自动运行，请取消下面的注释并配置 GitHub Secrets
-  # schedule:
-  #   - cron: '0 12 * * *'
+  # 定时执行：每天 12:00 UTC（北京时间 20:00）
+  schedule:
+    - cron: '0 12 * * *'
   
+  # 允许手动触发
   workflow_dispatch:
 
 jobs:
@@ -42,6 +42,9 @@ jobs:
           MAIL_TO: ${{ secrets.MAIL_TO }}
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           
+          # SendGrid 配置（可选）
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          
           # 过滤和推送配置
           SCORE_THRESHOLD: ${{ secrets.SCORE_THRESHOLD }}
           TOPK: ${{ secrets.TOPK }}
@@ -55,16 +58,15 @@ jobs:
           # 去重配置
           ENABLE_DEDUP: true
           HISTORY_DB_PATH: ./history/sent_news.db
-          DEDUP_WINDOW_DAYS: 7
+          
+          # 语言配置
+          LANGUAGE: ${{ secrets.LANGUAGE || 'zh' }}
           
           # 时区
           TIMEZONE: America/New_York
         run: |
           cd extensions/hotnews-agent
-          # 创建必要的目录
-          mkdir -p logs history
-          # 运行主程序（带错误处理）
-          python run_daily.py --real || exit 1
+          python run_daily.py --real
       
       - name: Upload logs
         if: always()

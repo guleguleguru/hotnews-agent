@@ -181,6 +181,497 @@ class EmailPusher:
     
     def _build_html_body(self, items: List[NewsScoredItem], date: str, language: str = None) -> str:
         """
+        构建 HTML 邮件正文（高端 AI 产品设计）
+        
+        Args:
+            items: 新闻项列表
+            date: 日期
+            language: 语言 ("zh" 或 "en")，默认使用配置中的语言
+        
+        Returns:
+            str: HTML 内容
+        """
+        lang = language or config.LANGUAGE
+        
+        # 根据语言选择文本
+        if lang == "en":
+            header_title = "Daily Intelligence Digest"
+            score_high = "High Confidence"
+            score_medium = "Relevant"
+            score_low = "Noteworthy"
+            source_label = ""
+            read_more = "Read full story"
+            footer_text1 = "Powered by HotNews Agent"
+            footer_text2 = "AI-curated news intelligence"
+            why_matters = "Why this matters"
+        else:
+            header_title = "每日情报摘要"
+            score_high = "高置信度"
+            score_medium = "相关"
+            score_low = "值得关注"
+            source_label = ""
+            read_more = "阅读全文"
+            footer_text1 = "由 HotNews Agent 驱动"
+            footer_text2 = "AI 策划的新闻情报"
+            why_matters = "为什么重要"
+        
+        html = f"""
+<!DOCTYPE html>
+<html lang="{lang}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        @media (prefers-reduced-motion: reduce) {{
+            *, *::before, *::after {{
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }}
+        }}
+        
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
+            line-height: 1.6;
+            color: #e4e4e7;
+            background: #09090b;
+            padding: 24px 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }}
+        
+        .container {{
+            max-width: 680px;
+            margin: 0 auto;
+        }}
+        
+        /* Premium Header */
+        .header {{
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            padding: 48px 32px;
+            border-radius: 12px 12px 0 0;
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        .header::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.08) 0%, transparent 60%);
+            pointer-events: none;
+        }}
+        
+        .header-content {{
+            position: relative;
+            z-index: 1;
+        }}
+        
+        .header h1 {{
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }}
+        
+        .header-date {{
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.75);
+            letter-spacing: 0.01em;
+        }}
+        
+        /* Content Area */
+        .content {{
+            background: #18181b;
+            padding: 32px;
+            border-radius: 0 0 12px 12px;
+            border: 1px solid #27272a;
+            border-top: none;
+        }}
+        
+        /* News Card - Premium AI Product Style */
+        .news-card {{
+            background: #1c1c1f;
+            border: 1px solid #2a2a2d;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: all 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+        }}
+        
+        .news-card:hover {{
+            transform: translateY(-2px);
+            border-color: #3a3a3d;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+        }}
+        
+        .news-card:last-child {{
+            margin-bottom: 0;
+        }}
+        
+        /* Card Header */
+        .card-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            gap: 16px;
+        }}
+        
+        .rank-badge {{
+            font-size: 16px;
+            font-weight: 600;
+            color: #71717a;
+            font-variant-numeric: tabular-nums;
+            flex-shrink: 0;
+        }}
+        
+        /* Score Pill - Semantic + Premium */
+        .score-pill {{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            color: #86efac;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.08);
+            flex-shrink: 0;
+        }}
+        
+        .score-pill-medium {{
+            background: rgba(234, 179, 8, 0.12);
+            border-color: rgba(234, 179, 8, 0.2);
+            color: #fde047;
+            box-shadow: 0 0 12px rgba(234, 179, 8, 0.08);
+        }}
+        
+        .score-pill-low {{
+            background: rgba(148, 163, 184, 0.12);
+            border-color: rgba(148, 163, 184, 0.2);
+            color: #cbd5e1;
+            box-shadow: 0 0 12px rgba(148, 163, 184, 0.05);
+        }}
+        
+        .score-label {{
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.9;
+        }}
+        
+        .score-value {{
+            font-size: 13px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }}
+        
+        /* Title - Editorial Spacing */
+        .news-title {{
+            font-size: 19px;
+            font-weight: 600;
+            line-height: 1.5;
+            color: #fafafa;
+            margin-bottom: 14px;
+            letter-spacing: -0.01em;
+        }}
+        
+        .news-title a {{
+            color: inherit;
+            text-decoration: none;
+        }}
+        
+        /* Summary - Calm Background */
+        .news-summary {{
+            font-size: 15px;
+            line-height: 1.65;
+            color: #a1a1aa;
+            background: rgba(39, 39, 42, 0.6);
+            padding: 14px 16px;
+            border-radius: 6px;
+            border-left: 2px solid #3f3f46;
+            margin-bottom: 16px;
+        }}
+        
+        /* Metadata Row - Product Style */
+        .metadata {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            color: #71717a;
+            margin-bottom: 12px;
+            font-variant-numeric: tabular-nums;
+        }}
+        
+        .metadata-item {{
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }}
+        
+        .metadata-separator {{
+            color: #3f3f46;
+        }}
+        
+        .metadata-source {{
+            font-weight: 500;
+            color: #a1a1aa;
+        }}
+        
+        /* CTA - Guided Action */
+        .cta-container {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+        
+        .read-more {{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #a78bfa;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+            padding: 6px 12px;
+            margin: -6px -12px;
+            border-radius: 6px;
+        }}
+        
+        .read-more:hover {{
+            color: #c4b5fd;
+            background: rgba(167, 139, 250, 0.08);
+        }}
+        
+        .read-more::after {{
+            content: '→';
+            display: inline-block;
+            transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+        }}
+        
+        .read-more:hover::after {{
+            transform: translateX(3px);
+        }}
+        
+        /* AI Insight - Optional Feature */
+        .ai-insight {{
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #71717a;
+            cursor: help;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 160ms;
+        }}
+        
+        .ai-insight:hover {{
+            color: #a1a1aa;
+            background: rgba(113, 113, 122, 0.08);
+        }}
+        
+        .ai-insight::before {{
+            content: '✦';
+            font-size: 10px;
+            opacity: 0.7;
+        }}
+        
+        /* Footer - Minimal */
+        .footer {{
+            background: #18181b;
+            border-top: 1px solid #27272a;
+            padding: 32px;
+            text-align: center;
+            margin-top: 32px;
+            border-radius: 12px;
+        }}
+        
+        .footer-text {{
+            font-size: 13px;
+            color: #71717a;
+            line-height: 1.8;
+            margin-bottom: 4px;
+        }}
+        
+        .footer-link {{
+            color: #a1a1aa;
+            text-decoration: none;
+            transition: color 160ms;
+        }}
+        
+        .footer-link:hover {{
+            color: #e4e4e7;
+        }}
+        
+        .footer-unsubscribe {{
+            font-size: 11px;
+            color: #52525b;
+            margin-top: 16px;
+        }}
+        
+        /* Responsive */
+        @media (max-width: 600px) {{
+            body {{
+                padding: 16px 12px;
+            }}
+            
+            .header {{
+                padding: 36px 24px;
+            }}
+            
+            .header h1 {{
+                font-size: 24px;
+            }}
+            
+            .content {{
+                padding: 24px 20px;
+            }}
+            
+            .news-card {{
+                padding: 20px;
+            }}
+            
+            .news-title {{
+                font-size: 17px;
+            }}
+            
+            .card-header {{
+                flex-direction: column;
+                align-items: flex-start;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1>{header_title}</h1>
+                <div class="header-date">{self._format_date_human(date, lang)}</div>
+            </div>
+        </div>
+        <div class="content">
+"""
+        
+        for i, item in enumerate(items, 1):
+            # UTM 参数
+            link = f"{item.url}?utm_source=hotnews-agent&utm_medium=email" if '?' not in item.url else f"{item.url}&utm_source=hotnews-agent"
+            
+            # 根据语言选择标题和摘要
+            if lang == "en":
+                title = item.title_en or item.title
+                summary = item.summary_en or "No summary available"
+            else:
+                title = item.title_zh or item.title
+                summary = item.summary_zh or "暂无摘要"
+            
+            # 分数语义化
+            score = item.score
+            if score >= 80:
+                score_class = "score-pill"
+                score_semantic = score_high
+            elif score >= 60:
+                score_class = "score-pill score-pill-medium"
+                score_semantic = score_medium
+            else:
+                score_class = "score-pill score-pill-low"
+                score_semantic = score_low
+            
+            # 格式化时间
+            time_human = self._format_time_human(item.published_time, lang)
+            
+            html += f"""
+            <div class="news-card">
+                <div class="card-header">
+                    <div class="rank-badge">{i:02d}</div>
+                    <div class="{score_class}">
+                        <span class="score-label">{score_semantic}</span>
+                        <span class="score-value">{score:.1f}</span>
+                    </div>
+                </div>
+                
+                <h2 class="news-title">
+                    <a href="{link}" target="_blank">{title}</a>
+                </h2>
+                
+                <div class="news-summary">{summary}</div>
+                
+                <div class="metadata">
+                    <span class="metadata-source">{item.source}</span>
+                    <span class="metadata-separator">·</span>
+                    <span class="metadata-item">{time_human}</span>
+                </div>
+                
+                <div class="cta-container">
+                    <a href="{link}" target="_blank" class="read-more">{read_more}</a>
+                    <span class="ai-insight" title="Ranked based on relevance, novelty, and market impact">{why_matters}</span>
+                </div>
+            </div>
+"""
+        
+        html += f"""
+        </div>
+        
+        <div class="footer">
+            <div class="footer-text">{footer_text1}</div>
+            <div class="footer-text">{footer_text2} · <a href="https://github.com/themaximalist/newsscore" class="footer-link" target="_blank">Scoring by NewsScore</a></div>
+            <div class="footer-unsubscribe">Reply STOP to unsubscribe</div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        return html
+    
+    def _format_date_human(self, date_str: str, lang: str) -> str:
+        """格式化日期为人类可读格式"""
+        try:
+            from datetime import datetime
+            dt = datetime.strptime(date_str, "%Y-%m-%d")
+            if lang == "en":
+                return dt.strftime("%B %d, %Y")
+            else:
+                return f"{dt.year}年{dt.month}月{dt.day}日"
+        except:
+            return date_str
+    
+    def _format_time_human(self, time_str: str, lang: str) -> str:
+        """格式化时间为人类可读格式"""
+        try:
+            from datetime import datetime
+            # 尝试解析 ISO 格式
+            if 'T' in time_str:
+                dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
+                if lang == "en":
+                    return dt.strftime("%b %d · %I:%M %p")
+                else:
+                    return dt.strftime("%m月%d日 · %H:%M")
+            else:
+                return time_str
+        except:
+            return time_str
+        """
         构建 HTML 邮件正文（现代化设计，支持双语）
         
         Args:
