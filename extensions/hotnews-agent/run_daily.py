@@ -341,6 +341,8 @@ def main(use_mock_data: bool = False):
             # 保存结构化数据
             if "structured_data" in article:
                 item.structured_data = article["structured_data"]
+                # 提取 reasons 用于邮件显示
+                item.reasons = article.get("structured_data", {}).get("reasons", [])
             scored_items.append(item)
     
     if not scored_items:

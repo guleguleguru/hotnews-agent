@@ -601,6 +601,21 @@ class EmailPusher:
             # 格式化时间
             time_human = self._format_time_human(item.published_time, lang)
             
+            # 获取 AI 评分理由
+            reasons = getattr(item, 'reasons', [])
+            if reasons:
+                if lang == "en":
+                    reasons_text = " · ".join(reasons[:3])  # 最多显示 3 条
+                else:
+                    reasons_text = " · ".join(reasons[:3])
+                ai_insight_title = reasons_text
+            else:
+                # 默认提示文本
+                if lang == "en":
+                    ai_insight_title = "Ranked based on relevance, novelty, and market impact"
+                else:
+                    ai_insight_title = "基于相关性、新颖度和市场影响力排名"
+            
             html += f"""
             <div class="news-card">
                 <div class="card-header">
@@ -625,7 +640,7 @@ class EmailPusher:
                 
                 <div class="cta-container">
                     <a href="{link}" target="_blank" class="read-more">{read_more}</a>
-                    <span class="ai-insight" title="Ranked based on relevance, novelty, and market impact">{why_matters}</span>
+                    <span class="ai-insight" title="{ai_insight_title}">{why_matters}</span>
                 </div>
             </div>
 """

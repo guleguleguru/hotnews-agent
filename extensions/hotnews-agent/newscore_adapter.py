@@ -54,6 +54,7 @@ class NewsScoredItem:
         self.summary_en: str = ""  # 英文摘要
         self.full_text: str = ""  # 全文内容（用于高质量摘要）
         self.structured_data: Dict[str, Any] = {}  # 结构化评分数据
+        self.reasons: List[str] = []  # AI 评分理由
     
     def to_dict(self) -> Dict[str, Any]:
         """
