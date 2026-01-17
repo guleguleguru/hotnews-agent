@@ -83,6 +83,10 @@ class Config:
     SMTP_MAX_RETRIES: int = int(os.getenv("SMTP_MAX_RETRIES", "3"))
     SMTP_RETRY_DELAY: int = int(os.getenv("SMTP_RETRY_DELAY", "2"))  # 秒
     
+    # 语言配置
+    # 可选值: "zh" (中文) 或 "en" (英文)
+    LANGUAGE: str = os.getenv("LANGUAGE", "zh").lower()
+    
     @classmethod
     def validate(cls) -> bool:
         """

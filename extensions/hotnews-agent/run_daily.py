@@ -10,8 +10,8 @@ from difflib import SequenceMatcher
 from loguru import logger
 from config import config
 from newscore_adapter import NewsScoreAdapter, NewsScoredItem, generate_mock_scored_news, fetch_and_score_real_news
-from zh_rewrite import ChineseTitleRewriter
-from zh_summary import ChineseSummaryGenerator
+from title_rewriter import TitleRewriter
+from summary_generator import SummaryGenerator
 from email_push import EmailPusher
 from storage import HistoryStorage
 from full_text_extractor import FullTextExtractor
@@ -474,14 +474,15 @@ def main(use_mock_data: bool = False):
         
         logger.info(f"全文抓取完成: {success_count}/{len(items_to_fetch)} 成功")
         
-        # 6.2 改写标题（所有新闻）
-        logger.info("开始生成中文标题...")
-        rewriter = ChineseTitleRewriter()
+        # 6.2 改写标题（所有新闻，根据语言配置）
+        lang = config.LANGUAGE
+        logger.info(f"开始生成标题（语言: {lang}）...")
+        rewriter = TitleRewriter(language=lang)
         final_items = rewriter.rewrite_batch(final_items)
         
         # 6.3 生成摘要（分层处理：有全文的用全文，没有的用 snippet）
-        logger.info("开始生成中文摘要...")
-        summarizer = ChineseSummaryGenerator()
+        logger.info(f"开始生成摘要（语言: {lang}）...")
+        summarizer = SummaryGenerator(language=lang)
         final_items = summarizer.generate_batch(final_items)
         
         # 统计
@@ -499,7 +500,8 @@ def main(use_mock_data: bool = False):
     success = pusher.send_daily_digest(
         items=final_items, 
         date=date_str,
-        fallback_items=fallback_items if not final_items else None
+        fallback_items=fallback_items if not final_items else None,
+        language=config.LANGUAGE
     )
     
     if success:

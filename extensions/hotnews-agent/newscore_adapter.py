@@ -50,6 +50,8 @@ class NewsScoredItem:
         # Agent 层新增字段
         self.title_zh: str = ""
         self.summary_zh: str = ""
+        self.title_en: str = ""  # 英文改写标题
+        self.summary_en: str = ""  # 英文摘要
         self.full_text: str = ""  # 全文内容（用于高质量摘要）
     
     def to_dict(self) -> Dict[str, Any]:
@@ -68,6 +70,8 @@ class NewsScoredItem:
             "score": self.score,
             "title_zh": self.title_zh,
             "summary_zh": self.summary_zh,
+            "title_en": self.title_en,
+            "summary_en": self.summary_en,
             "full_text": self.full_text,
         }
     

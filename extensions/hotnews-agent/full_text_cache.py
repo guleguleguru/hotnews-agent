@@ -134,3 +134,4 @@ class FullTextCache:
         except Exception as e:
             logger.error(f"清理缓存失败: {e}")
 
+

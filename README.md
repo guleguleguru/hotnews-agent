@@ -101,7 +101,7 @@ HotNews Agent 是一个智能新闻推送系统，它：
 │                └──────────────┘                              │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
 │  │ Dedupe   │→│Full Text  │→│ Rewrite  │→│ Summary  │   │
-│  │(TF-IDF)  │  │(Cached)   │  │(Chinese) │  │(Chinese) │   │
+│  │(TF-IDF)  │  │(Cached)   │  │(Bilingual)│ │(Bilingual)│   │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
 │                                                               │
 │  ┌──────────┐  ┌──────────┐                                 │
@@ -153,6 +153,9 @@ MAIL_TO=recipient@example.com
 SCORE_THRESHOLD=35  # 0-100分制，35=标准，30=更多新闻，40=严格
 TOPK=8              # 每日发送数量
 MAX_ITEMS=12        # 最多处理的新闻数量（费用控制）
+
+# 语言配置
+LANGUAGE=zh  # 可选: "zh" (中文) 或 "en" (英文)
 ```
 
 ### 4. 运行测试
@@ -200,6 +203,7 @@ python run_daily.py --real
 | `TITLE_SIMILARITY_THRESHOLD` | 标题相似度阈值 | 0.75 | 0.75 |
 | `ENABLE_DEDUP` | 启用去重 | true | true |
 | `DEDUP_WINDOW_DAYS` | 去重时间窗口（天） | 7 | 7 |
+| `LANGUAGE` | 邮件语言 | zh | zh (中文) 或 en (英文) |
 
 ### 邮件配置
 
