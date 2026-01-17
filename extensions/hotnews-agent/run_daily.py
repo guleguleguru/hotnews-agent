@@ -7,6 +7,7 @@ import sys
 import re
 from datetime import datetime
 from difflib import SequenceMatcher
+from typing import List
 from loguru import logger
 from config import config
 from newscore_adapter import NewsScoreAdapter, NewsScoredItem, generate_mock_scored_news, fetch_and_score_real_news

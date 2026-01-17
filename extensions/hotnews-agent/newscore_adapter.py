@@ -53,6 +53,7 @@ class NewsScoredItem:
         self.title_en: str = ""  # 英文改写标题
         self.summary_en: str = ""  # 英文摘要
         self.full_text: str = ""  # 全文内容（用于高质量摘要）
+        self.structured_data: Dict[str, Any] = {}  # 结构化评分数据
     
     def to_dict(self) -> Dict[str, Any]:
         """
