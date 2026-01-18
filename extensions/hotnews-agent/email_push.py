@@ -473,28 +473,43 @@ class EmailPusher:
             transform: translateX(3px);
         }}
         
-        /* AI Insight - Optional Feature */
+        /* AI Insight - Always Visible */
         .ai-insight {{
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: rgba(167, 139, 250, 0.08);
+            border-left: 2px solid rgba(167, 139, 250, 0.3);
+            border-radius: 6px;
             font-size: 12px;
-            color: #71717a;
-            cursor: help;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: all 160ms;
-        }}
-        
-        .ai-insight:hover {{
+            line-height: 1.5;
             color: #a1a1aa;
-            background: rgba(113, 113, 122, 0.08);
         }}
         
-        .ai-insight::before {{
-            content: '✦';
-            font-size: 10px;
-            opacity: 0.7;
+        .ai-insight-icon {{
+            color: #a78bfa;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }}
+        
+        .ai-insight-content {{
+            flex: 1;
+        }}
+        
+        .ai-insight-label {{
+            font-weight: 600;
+            color: #c4b5fd;
+            margin-bottom: 3px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }}
+        
+        .ai-insight-text {{
+            color: #a1a1aa;
         }}
         
         /* Footer - Minimal */
@@ -603,18 +618,25 @@ class EmailPusher:
             
             # 获取 AI 评分理由
             reasons = getattr(item, 'reasons', [])
+            ai_insight_html = ""
             if reasons:
+                # 显示 AI reasons
                 if lang == "en":
                     reasons_text = " · ".join(reasons[:3])  # 最多显示 3 条
+                    insight_label = "Why this matters"
                 else:
                     reasons_text = " · ".join(reasons[:3])
-                ai_insight_title = reasons_text
-            else:
-                # 默认提示文本
-                if lang == "en":
-                    ai_insight_title = "Ranked based on relevance, novelty, and market impact"
-                else:
-                    ai_insight_title = "基于相关性、新颖度和市场影响力排名"
+                    insight_label = "为什么重要"
+                
+                ai_insight_html = f"""
+                <div class="ai-insight">
+                    <div class="ai-insight-icon">✦</div>
+                    <div class="ai-insight-content">
+                        <div class="ai-insight-label">{insight_label}</div>
+                        <div class="ai-insight-text">{reasons_text}</div>
+                    </div>
+                </div>
+                """
             
             html += f"""
             <div class="news-card">
@@ -638,9 +660,10 @@ class EmailPusher:
                     <span class="metadata-item">{time_human}</span>
                 </div>
                 
+                {ai_insight_html}
+                
                 <div class="cta-container">
                     <a href="{link}" target="_blank" class="read-more">{read_more}</a>
-                    <span class="ai-insight" title="{ai_insight_title}">{why_matters}</span>
                 </div>
             </div>
 """
