@@ -66,10 +66,7 @@ CRITICAL RULES:
 - STRICTLY EXCLUDE: Job postings, tools, tutorials, product reviews, academic papers (unless major breakthrough), year titles, celebrity gossip, sports (unless major event)
 
 REASONS: Provide 2-3 brief reasons using this format: "🔹 [Domain]: [Impact]"
-Examples:
-- "🌍 地缘政治: 欧美贸易争端可能升级"
-- "💰 经济市场: 关税政策可能影响出口企业"
-- "🔬 科技创新: AI 技术突破改变行业格局"
+{language_examples}
 Keep each reason under 25 words. Use relevant emoji (🌍🇺🇸🇨🇳💰📈📉🔬💻⚡🏢🏭📊🎯).
 
 OUTPUT ONLY VALID JSON. No extra text before or after.
@@ -80,14 +77,20 @@ ARTICLE DETAILS:
 Return JSON:
 """.strip()
     
-    def __init__(self):
-        """初始化评分器"""
+    def __init__(self, language: str = None):
+        """
+        初始化评分器
+        
+        Args:
+            language: 目标语言 ("zh" 或 "en")，默认使用配置中的语言
+        """
         self.client = OpenAI(
             api_key=config.OPENAI_API_KEY,
             base_url=config.OPENAI_BASE_URL
         )
         self.model = config.OPENAI_MODEL
-        logger.info(f"AI 评分器初始化，使用模型: {self.model}")
+        self.language = language or config.LANGUAGE
+        logger.info(f"AI 评分器初始化，使用模型: {self.model}，语言: {self.language}")
     
     @staticmethod
     def compute_score(
@@ -203,7 +206,24 @@ Return JSON:
                 "category": article.get("category", "general"),
             }, indent=2, ensure_ascii=False)
             
-            prompt = self.STRUCTURED_SCORE_PROMPT_TEMPLATE.format(article_json=article_json)
+            # 根据语言选择示例
+            if self.language == "zh":
+                language_examples = """Examples (output in Chinese):
+- "🌍 地缘政治: 欧美贸易争端可能升级"
+- "💰 经济市场: 关税政策可能影响出口企业"
+- "🔬 科技创新: AI 技术突破改变行业格局"
+Output reasons in Chinese."""
+            else:
+                language_examples = """Examples (output in English):
+- "🌍 Geopolitics: US-EU trade tensions escalating"
+- "💰 Economy: Tariff policies may impact exporters"
+- "🔬 Tech Innovation: AI breakthrough reshapes industry"
+Output reasons in English."""
+            
+            prompt = self.STRUCTURED_SCORE_PROMPT_TEMPLATE.format(
+                article_json=article_json,
+                language_examples=language_examples
+            )
             
             # 调用 LLM 获取结构化 JSON
             raw_output, parsed_json = self._call_llm_structured(prompt)

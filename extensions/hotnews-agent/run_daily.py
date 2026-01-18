@@ -325,8 +325,8 @@ def main(use_mock_data: bool = False):
         articles = fetcher.fetch_all(hours=48, max_per_source=15)
         raw_articles = articles.copy()
         
-        # AI 评分（使用结构化评分）
-        scorer = NewsScorer()
+        # AI 评分（使用结构化评分，传入语言参数）
+        scorer = NewsScorer(language=config.LANGUAGE)
         scoring_limit = 75  # 评分更多新闻，确保有足够候选
         articles_to_score = articles[:scoring_limit]
         scored_articles = scorer.score_batch(articles_to_score)
