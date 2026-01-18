@@ -76,8 +76,8 @@ class Config:
     
     # 摘要生成配置
     # 摘要长度配置（建议范围，不是硬上限）
-    SUMMARY_TARGET_LENGTH: int = int(os.getenv("SUMMARY_TARGET_LENGTH", "60"))  # 目标长度（建议值）
-    SUMMARY_MAX_LENGTH: int = int(os.getenv("SUMMARY_MAX_LENGTH", "100"))  # 最大长度（硬上限，超过会截断）
+    SUMMARY_TARGET_LENGTH: int = int(os.getenv("SUMMARY_TARGET_LENGTH", "80"))  # 目标长度（建议值）
+    SUMMARY_MAX_LENGTH: int = int(os.getenv("SUMMARY_MAX_LENGTH", "200"))  # 最大长度（硬上限，超过会截断）
     
     # SMTP 重试配置
     SMTP_MAX_RETRIES: int = int(os.getenv("SMTP_MAX_RETRIES", "3"))

@@ -65,7 +65,12 @@ CRITICAL RULES:
 - Focus on economics, technology, business, and politics (policy changes, elections, international relations)
 - STRICTLY EXCLUDE: Job postings, tools, tutorials, product reviews, academic papers (unless major breakthrough), year titles, celebrity gossip, sports (unless major event)
 
-REASONS: Provide 2-4 short reasons explaining your classification.
+REASONS: Provide 2-3 brief reasons using this format: "🔹 [Domain]: [Impact]"
+Examples:
+- "🌍 地缘政治: 欧美贸易争端可能升级"
+- "💰 经济市场: 关税政策可能影响出口企业"
+- "🔬 科技创新: AI 技术突破改变行业格局"
+Keep each reason under 25 words. Use relevant emoji (🌍🇺🇸🇨🇳💰📈📉🔬💻⚡🏢🏭📊🎯).
 
 OUTPUT ONLY VALID JSON. No extra text before or after.
 
